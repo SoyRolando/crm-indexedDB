@@ -1,148 +1,110 @@
-(function() {
+(function () {
 
+    //?========================= Variables =========================
     let DB;
     let idCliente;
-    const formulario = document.querySelector('#formulario');
-   
     const nombreInput = document.querySelector('#nombre');
     const emailInput = document.querySelector('#email');
-    const empresaInput = document.querySelector('#empresa');
     const telefonoInput = document.querySelector('#telefono');
+    const empresaInput = document.querySelector('#empresa');
+
+    const formulario = document.querySelector('#formulario');
+
+
 
     document.addEventListener('DOMContentLoaded', () => {
 
-
         conectarDB();
-
-        //
-        formulario.addEventListener('submit', actualizarCliente);
-
-
-        // Verificar si el cliente existe
         const parametrosURL = new URLSearchParams(window.location.search);
         idCliente = parametrosURL.get('id');
-        if(idCliente) {
-   
-            setTimeout( () => {
+        if (idCliente) {
+            setTimeout(() =>{
                 obtenerCliente(idCliente);
-            }, 100);
+            },100);
         }
 
-    });
+        //! Actualiza el registro
+        formulario.addEventListener('submit', actualizarCliente);
+    })
 
 
-    function conectarDB() {
-        // ABRIR CONEXIÓN EN LA BD:
+    //?========================= Funciones =========================
 
-        let abrirConexion = window.indexedDB.open('crm', 1);
-
-        // si hay un error, lanzarlo
-        abrirConexion.onerror = function() {
-            console.log('Hubo un error');
-        };
-     
-        // si todo esta bien, asignar a database el resultado
-        abrirConexion.onsuccess = function() {
-            // guardamos el resultado
-            DB = abrirConexion.result;
-        };
-    }
-
-
-    function obtenerCliente(id) {
-  
+    function obtenerCliente(id){
         const transaction = DB.transaction(['crm'], 'readwrite');
         const objectStore = transaction.objectStore('crm');
 
-        console.log(objectStore);
-
-        var request = objectStore.openCursor();
-        request.onsuccess = function(event) {
-            var cursor = event.target.result;
-            if (cursor) {
-                if(cursor.value.id  == id ) {
-                    // pasar el que estamos editando...
-                    llenarFormulario(cursor.value);
+        const cliente = objectStore.openCursor();
+        cliente.onsuccess = function(e){
+            const cursor = e.target.result;
+            if(cursor){
+                if(cursor.value.id === Number(id)){
+                    llenarFromulario(cursor.value);
                 }
-                cursor.continue();          
+
+                cursor.continue();
             }
-        };
+        }
+    }
+
+    function conectarDB() {
+        const abrirConexion = window.indexedDB.open('crm', 1);
+
+        //! Si hay algun error
+        abrirConexion.onerror = function () {
+            console.log('Error Conectando la BD');
+        }
+        //! Si se creo bien
+        abrirConexion.onsuccess = function () {
+            DB = abrirConexion.result;
+
+        }
+    }
+
+    function llenarFromulario(cliente){
+        const { nombre, email, telefono, empresa } = cliente;
+
+        nombreInput.value = nombre;
+        emailInput.value = email;
+        telefonoInput.value = telefono;
+        empresaInput.value = empresa;
 
     }
 
-    function llenarFormulario(datosCliente) {
-        const { nombre, email, empresa, telefono } = datosCliente;
-         nombreInput.value = nombre;
-         emailInput.value = email;
-         empresaInput.value = empresa;
-         telefonoInput.value = telefono;
-    }
-
-    function actualizarCliente(e) {
+    function actualizarCliente(e){
         e.preventDefault();
 
-        if( nombreInput.value === '' || emailInput.value === '' || empresaInput.value === '' || telefonoInput.value === '' ) {
-            imprimirAlerta('Todos los campos son obligatorios', 'error');
+        if(nombreInput.value === '' || emailInput.value === '' || telefonoInput.value === '' || empresaInput.value === ''){
+            imprimirAlerta('Todos los Campos son Obligatorios', 'error');
+
             return;
         }
 
-        // actualizar...
-        const clienteActualizado = {
+        const clienteAct = {
             nombre: nombreInput.value,
             email: emailInput.value,
-            empresa: empresaInput.value,
             telefono: telefonoInput.value,
-            id: Number( idCliente )
-        };
+            empresa: empresaInput.value,
+            id: Number(idCliente),
+        }
 
-        console.log(clienteActualizado)
-
-
-        // actualizar...
         const transaction = DB.transaction(['crm'], 'readwrite');
         const objectStore = transaction.objectStore('crm');
 
-        objectStore.put(clienteActualizado);
+        objectStore.put(clienteAct);
 
-        transaction.oncomplete = () => {
-            imprimirAlerta('Editado Correctamente');
+        transaction.oncomplete = function() {
+            imprimirAlerta('Editado correctamente');
+        }
 
-            setTimeout(() => {
-                window.location.href = 'index.html';
-            }, 3000);
-        };
+        transaction.onerror = function() {
+            imprimirAlerta('Hubo un error en la edicion', 'error');
+        }
 
-        transaction.onerror = (error) => {
-            console.log(error);
-            console.log('Hubo un errorr.');
-        };
+        setTimeout( () =>{
+            window.location.href = 'index.html';
+        },2000)
     }
 
-
-    function imprimirAlerta(mensaje, tipo) {
-        // Crea el div
-
-        const divMensaje = document.createElement('div');
-        divMensaje.classList.add( "px-4", "py-3", "rounded",  "max-w-lg", "mx-auto", "mt-6", "text-center" );
-
-        if(tipo === 'error') {
-           divMensaje.classList.add('bg-red-100', "border-red-400", "text-red-700");
-        } else {
-            divMensaje.classList.add('bg-green-100', "border-green-400", "text-green-700");
-        }
-        
-        // Mensaje de error
-        divMensaje.textContent = mensaje;
-
-        // Insertar en el DOM
-       formulario.appendChild(divMensaje);
-
-        // Quitar el alert despues de 3 segundos
-        setTimeout( () => {
-            divMensaje.remove();
-        }, 3000);
-   }
-
-    
 
 })();

@@ -1,18 +1,18 @@
-(function() {
+(function () {
     let DB;
-
+    //! Variables de lectura del HTML
     const formulario = document.querySelector('#formulario');
 
     document.addEventListener('DOMContentLoaded', () => {
         formulario.addEventListener('submit', validarCliente);
-
+        
         conectarDB();
-    });
+    })
 
     function conectarDB() {
         // ABRIR CONEXIÓN EN LA BD:
 
-        let abrirConexion = window.indexedDB.open('crm', 1);
+        const abrirConexion = window.indexedDB.open('crm', 1);
 
         // si hay un error, lanzarlo
         abrirConexion.onerror = function() {
@@ -26,43 +26,49 @@
         };
     }
 
-
     function validarCliente(e) {
         e.preventDefault();
 
-
+        //! Leer todos los inputs
         const nombre = document.querySelector('#nombre').value;
         const email = document.querySelector('#email').value;
         const telefono = document.querySelector('#telefono').value;
         const empresa = document.querySelector('#empresa').value;
 
-        if(nombre === '' || email === '' || telefono === '' || empresa === '') {
-             
-
+        //! Validar los inputs
+        if (nombre.trim() === '' || empresa.trim() === '' || telefono.trim() === '' || email.trim() === '' || telefono.trim() === '') {
+            imprimirAlerta('Todos los Campos son Obligatorios', 'error');
             return;
         }
 
-        // añadir a la BD...
-        // crear un nuevo objeto con toda la info
+        if (validarTelefono(telefono) === false) {
+            imprimirAlerta('El Telefono no es Válido', 'error');
+            return;
+        }
 
+        if (validarEmail(email) === false) {
+            imprimirAlerta('El Email no es Válido', 'error');
+            return;
+        }
+
+        //! Crear un nuevo objeto con la informacion
         const cliente = {
-            nombre, 
+            nombre,
             email,
             telefono,
-            empresa
-        };
+            empresa,
+        }
 
-        // Generar un ID único
         cliente.id = Date.now();
-
-
 
         crearNuevoCliente(cliente);
     }
 
-    function crearNuevoCliente(cliente) {
 
-        
+    
+    //?========================= Funciones =========================
+
+    function crearNuevoCliente(cliente) {
 
         // NUEVO: 
         const transaction = DB.transaction(['crm'], 'readwrite');
@@ -78,7 +84,7 @@
 
             setTimeout(() => {
                 window.location.href = 'index.html';
-            }, 3000);
+            }, 2000);
         };
 
         transaction.onerror = () => {
@@ -87,28 +93,28 @@
         };
     }
 
-    function imprimirAlerta(mensaje, tipo) {
-         // Crea el div
 
-         const divMensaje = document.createElement('div');
-         divMensaje.classList.add( "px-4", "py-3", "rounded",  "max-w-lg", "mx-auto", "mt-6", "text-center" );
 
-         if(tipo === 'error') {
-            divMensaje.classList.add('bg-red-100', "border-red-400", "text-red-700");
-         } else {
-             divMensaje.classList.add('bg-green-100', "border-green-400", "text-green-700");
-         }
-         
-         // Mensaje de error
-         divMensaje.textContent = mensaje;
- 
-         // Insertar en el DOM
-        formulario.appendChild(divMensaje);
- 
-         // Quitar el alert despues de 3 segundos
-         setTimeout( () => {
-             divMensaje.remove();
-         }, 3000);
+    function validarEmail(email) {
+        const regex = /^\w+([.-_+]?\w+)*@\w+([.-]?\w+)*(\.\w{2,10})+$/;
+        const resultado = regex.test(email);
+
+        if (!resultado) {
+            imprimirAlerta('El email no es correcto', 'error');
+            return false;
+        }
+
     }
+
+    function validarTelefono(telefono) {
+        const regex = /^\d+$/;
+        const resultado = regex.test(telefono);
+
+        if (!resultado) {
+            imprimirAlerta('El Teléfono no es correcto', 'error');
+            return false;
+        }
+    }
+
 
 })();
